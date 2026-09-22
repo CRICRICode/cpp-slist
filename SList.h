@@ -124,7 +124,7 @@ T &SList<T>::front()
 {
     if (empty())
     {
-        throw std::out_of_range("SList la lista è vuota");
+        throw std::out_of_range("SList is empty");
     }
     T &valueHead = this->head->value;
     return valueHead;
@@ -135,7 +135,7 @@ const T &SList<T>::front() const
 {
     if (empty())
     {
-        throw std::out_of_range("SList la lista è vuota");
+        throw std::out_of_range("SList is empty");
     }
     const T &valueHead = this->head->value;
     return valueHead;
@@ -146,7 +146,7 @@ void SList<T>::pop_front()
 {
     if (this->head == nullptr)
     {
-        throw std::out_of_range("Slist la lista è vuota");
+        throw std::out_of_range("Slist is empty");
     }
 
     Node *newHead = this->head->next;
@@ -221,4 +221,104 @@ SList<T> &SList<T>::operator=(SList &&other)
         other.m_size = 0;
     }
     return *this;
+}
+
+
+// Iterator
+
+template <typename T>
+SList<T>::Iterator::Iterator(typename SList<T>::Node *node) : current(node) {}
+
+template <typename T>
+typename SList<T>::Iterator SList<T>::begin()
+{
+    return Iterator{this->head};
+}
+
+template <typename T>
+typename SList<T>::Iterator SList<T>::end()
+{
+    return Iterator{nullptr};
+}
+
+template <typename T>
+bool SList<T>::Iterator::operator!=(const Iterator &other) const
+{
+    return this->current != other.current;
+}
+
+template <typename T>
+bool SList<T>::Iterator::operator==(const Iterator &other) const
+{
+    return !(this->current != other.current);
+}
+
+template <typename T>
+typename SList<T>::Iterator &SList<T>::Iterator::operator++()
+{
+    if (this->current != nullptr)
+    {
+        this->current = this->current->next;
+    }
+    return *this;
+}
+
+template <typename T>
+T &SList<T>::Iterator::operator*() const
+{
+    if (this->current == nullptr)
+    {
+        throw std::out_of_range("SList iterator is null");
+    }
+    return this->current->value;
+}
+
+// ConstIterator
+
+template <typename T>
+SList<T>::ConstIterator::ConstIterator(const typename SList<T>::Node *node) : current(node) {};
+
+template <typename T>
+typename SList<T>::ConstIterator SList<T>::begin() const
+{
+    return ConstIterator{this->head};
+}
+
+template <typename T>
+typename SList<T>::ConstIterator SList<T>::end() const
+{
+    return ConstIterator{nullptr};
+}
+
+template <typename T>
+typename SList<T>::ConstIterator &SList<T>::ConstIterator::operator++()
+{
+    if (this->current != nullptr)
+    {
+        current = this->current->next;
+    }
+    return *this;
+}
+
+template <typename T>
+const T &SList<T>::ConstIterator::operator*() const
+{
+    if (this->current == nullptr)
+    {
+        throw std::out_of_range("SList iterator is null");
+    }
+
+    return this->current->value;
+}
+
+template <typename T>
+bool SList<T>::ConstIterator::operator!=(const ConstIterator &other) const
+{
+    return this->current != other.current;
+}
+
+template <typename T>
+bool SList<T>::ConstIterator::operator==(const ConstIterator &other) const
+{
+    return !(this->current != other.current);
 }
