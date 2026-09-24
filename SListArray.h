@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <limits>
 #include <vector>
+#include <utility>
 
 template <typename T>
 class SListArray
@@ -25,7 +26,7 @@ private:
 
 public:
     SListArray() = default;
-    ~SListArray();
+    ~SListArray() = default;
     SListArray(SListArray &&other);
 
     T &front();
@@ -40,8 +41,8 @@ public:
     bool empty() const;
     std::size_t size() const;
 
-    SListArray(const SListArray &other);
-    SListArray &operator=(const SListArray &other);
+    SListArray(const SListArray &other) = default;
+    SListArray &operator=(const SListArray &other) = default;
     SListArray &operator=(SListArray &&other);
 
     class Iterator
@@ -51,7 +52,7 @@ public:
         std::size_t current;
 
     public:
-        Iterator(SListArray* list, std::size_t index);
+        Iterator(SListArray *list, std::size_t index);
         Iterator &operator++();
         T &operator*() const;
         bool operator!=(const Iterator &other) const;
@@ -67,7 +68,7 @@ public:
         std::size_t current;
 
     public:
-        ConstIterator(const SListArray* list, std::size_t index);
+        ConstIterator(const SListArray *list, std::size_t index);
         ConstIterator &operator++();
         const T &operator*() const;
         bool operator!=(const ConstIterator &other) const;
@@ -76,3 +77,218 @@ public:
     ConstIterator begin() const;
     ConstIterator end() const;
 };
+
+template <typename T>
+SListArray<T>::SListArray(SListArray &&other) : m_data(std::move(other.m_data)),
+                                                freeHead(other.freeHead),
+                                                head(other.head),
+                                                m_size(other.m_size)
+{
+    other.freeHead = npos;
+    other.head = npos;
+    other.m_size = 0;
+}
+
+template <typename T>
+SListArray<T> &SListArray<T>::operator=(SListArray<T> &&other)
+{
+    if (this != &other)
+    {
+        this->m_data = std::move(other.m_data);
+        this->freeHead = other.freeHead;
+        this->head = other.head;
+        this->m_size = other.m_size;
+        other.freeHead = npos;
+        other.head = npos;
+        other.m_size = 0;
+    }
+    return *this;
+}
+
+template <typename T>
+bool SListArray<T>::empty() const
+{
+
+    return m_size == 0;
+}
+
+template <typename T>
+std::size_t SListArray<T>::size() const
+{
+    return m_size;
+}
+
+template <typename T>
+T &SListArray<T>::front()
+{
+    if (empty())
+    {
+        throw std::out_of_range("List is empty");
+    }
+    return this->m_data.at(this->head).value;
+}
+
+template <typename T>
+const T &SListArray<T>::front() const
+{
+    if (empty())
+    {
+        throw std::out_of_range("List is empty");
+    }
+    return this->m_data.at(this->head).value;
+}
+
+template <typename T>
+void SListArray<T>::push_front(const T &value)
+{
+    std::size_t slot = freeHead;
+    if (freeHead != npos)
+    {
+        this->m_data[slot].value = value;
+        freeHead = this->m_data[freeHead].next;
+    }
+    else
+    {
+        slot = this->m_data.size();
+        this->m_data.emplace_back(Node{value, head});
+    }
+    this->m_data[slot].next = this->head;
+    this->head = slot;
+    this->m_size++;
+}
+
+template <typename T>
+void SListArray<T>::push_front(T &&value)
+{
+    std::size_t slot = freeHead;
+    if (freeHead != npos)
+    {
+        this->m_data[slot].value = std::move(value);
+        freeHead = this->m_data[freeHead].next;
+    }
+    else
+    {
+        slot = this->m_data.size();
+        this->m_data.emplace_back(Node{std::move(value), head});
+    }
+    this->m_data[slot].next = this->head;
+    this->head = slot;
+    this->m_size++;
+}
+
+template <typename T>
+void SListArray<T>::pop_front()
+{
+    if (empty())
+    {
+        throw std::out_of_range("List is empty");
+    }
+    std::size_t oldHead = head;
+    head = this->m_data[head].next;
+    this->m_data[oldHead].next = freeHead;
+    freeHead = oldHead;
+    this->m_size--;
+}
+
+template <typename T>
+void SListArray<T>::clear()
+{
+    freeHead = npos;
+    head = npos;
+    m_size = 0;
+    m_data.clear();
+}
+
+// Iterator
+
+template <typename T>
+SListArray<T>::Iterator::Iterator(SListArray *list, std::size_t index) : owner(list), current(index) {}
+
+template <typename T>
+T &SListArray<T>::Iterator::operator*() const {
+    if (current==npos){
+        throw std::out_of_range("SListArray: cannot dereference end iterator");
+    }
+    return this->owner->m_data.at(current).value;
+}
+
+template <typename T>
+typename SListArray<T>::Iterator &SListArray<T>::Iterator::operator++()
+{
+    if (this->current != npos)
+    {
+        this->current = this->owner->m_data[this->current].next;
+    }
+    return *this;
+}
+
+template <typename T>
+bool SListArray<T>::Iterator::operator==(const Iterator &other) const
+{
+    return (this->current == other.current && this->owner == other.owner);
+}
+
+template <typename T>
+bool SListArray<T>::Iterator::operator!=(const Iterator &other) const
+{
+    return !(*this == other);
+}
+
+template <typename T>
+typename SListArray<T>::Iterator SListArray<T>::begin()
+{
+    return Iterator{this, this->head};
+}
+
+template <typename T>
+typename SListArray<T>::Iterator SListArray<T>::end()
+{
+    return Iterator{this, npos};
+}
+
+// ConstIterator
+
+template <typename T>
+SListArray<T>::ConstIterator::ConstIterator( const SListArray *list, std::size_t index) : owner(list), current(index) {}
+
+template <typename T>
+const T &SListArray<T>::ConstIterator::operator*() const {
+    if (current==npos){
+        throw std::out_of_range("SListArray: cannot dereference end iterator");
+    }
+    return this->owner->m_data.at(current).value;
+}
+
+template <typename T>
+typename SListArray<T>::ConstIterator &SListArray<T>::ConstIterator::operator++()
+{
+    if (this->current != npos)
+    {
+        this->current = this->owner->m_data[this->current].next;
+    }
+    return *this;
+}
+
+template <typename T>
+bool SListArray<T>::ConstIterator::operator==(const ConstIterator &other) const
+{
+    return (this->current == other.current && this->owner == other.owner);
+}
+
+template <typename T>
+bool SListArray<T>::ConstIterator::operator!=(const ConstIterator &other) const
+{
+    return !(*this == other);
+}
+
+template <typename T>
+typename SListArray<T>::ConstIterator SListArray<T>::begin() const
+{
+    return ConstIterator{this, this->head};
+}
+
+template <typename T>
+typename SListArray<T>::ConstIterator SListArray<T>::end() const
+{
+    return ConstIterator{this, npos};
+}

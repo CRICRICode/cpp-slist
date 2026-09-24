@@ -1,4 +1,5 @@
 #include "SList.h"
+#include "SListArray.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -47,4 +48,60 @@ int main()
     // values.pop_front();
 
     // std::cout << *it << '\n';
+
+    // SListArray<int> values;
+
+    // values.push_front(10);
+    // values.push_front(20);
+
+    // std::cout << values.front() << ' ' << values.size() << '\n';
+
+    // SListArray<int> values;
+
+    // values.push_front(10);
+    // values.push_front(20);
+
+    // values.pop_front();
+    // std::cout << values.front() << ' ' << values.size() << '\n';
+
+    // values.push_front(30);
+    // std::cout << values.front() << ' ' << values.size() << '\n';
+
+    // values.clear();
+    // std::cout << std::boolalpha
+    //           << values.empty() << ' ' << values.size() << '\n';
+
+    // try
+    // {
+    //     values.pop_front();
+    // }
+    // catch (const std::out_of_range &error)
+    // {
+    //     std::cout << error.what() << '\n';
+    // }
+
+    SListArray<int> values;
+
+    values.push_front(10);
+    values.push_front(20);
+    values.push_front(30);
+
+    for (auto it = values.begin(); it != values.end(); ++it)
+    {
+        std::cout << *it << ' ';
+    }
+    std::cout << '\n';
+
+    auto saved = values.begin();
+    values.push_front(40);
+
+    std::cout << *saved << '\n';
+
+    const SListArray<int> &view = values;
+
+    for (auto it = view.begin(); it != view.end(); ++it)
+    {
+        std::cout << *it << ' ';
+    }
+    std::cout << '\n';
 }
