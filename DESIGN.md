@@ -121,7 +121,7 @@ Nelle versioni a indici, ogni link deve essere un indice valido oppure la sentin
 
 Le operazioni pubbliche non devono produrre Undefined Behaviour per input o stato gestibili. La struttura dati non deve stampare messaggi, aggiornare UI o decidere la logica di gioco: comunica l'esito al chiamante attraverso il contratto della propria API.
 
-`front` e `pop_front` su una lista vuota sollevano `std::out_of_range` in tutte e tre le implementazioni. `FixedSList::push_front` su una lista piena solleva `std::length_error`. Le versioni dinamiche devono lasciare propagare correttamente un eventuale fallimento di allocazione.
+`front` e `pop_front` su una lista vuota sollevano `std::out_of_range` in tutte e tre le implementazioni. `FixedSList::push_front` su una lista piena solleva `std::length_error`. In alternativa, `FixedSList::try_push_front` restituisce `false` quando la capacità è esaurita e lascia invariata la lista; `full` permette di interrogare esplicitamente questo stato. Le versioni dinamiche devono lasciare propagare correttamente un eventuale fallimento di allocazione.
 
 ## Iterator invalidation
 
@@ -137,6 +137,11 @@ La baseline adotta un contratto preciso, specifico per rappresentazione. Gli ite
 
 I test copriranno lista vuota, singolo elemento, più inserimenti e rimozioni, ordine di traversal, svuotamento, copy/move, self-assignment, iteratori, casi limite e i contratti di errore. Ogni implementazione verrà verificata contro gli stessi comportamenti osservabili.
 
-## Extra dopo baseline
+## Extra implementati dopo baseline
 
-Dopo una baseline corretta e testata, valuteremo benchmark controllati, controlli interni delle invarianti, test di invalidazione più estesi e miglioramenti dell'API che non cambino la semantica già congelata.
+Le seguenti estensioni non modificano la semantica di base della lista.
+
+- `Validate()`: controllo diagnostico O(n) delle invarianti. Verifica coerenza tra testa e `m_size`, assenza di cicli, indici validi e appartenenza univoca degli slot alla catena attiva o alla free list. È pensato per test e debugging: uno stato pieno o vuoto può essere perfettamente valido.
+- `SListArray::reserve(slotCount)`: inoltra la richiesta di capacità al vector interno per ridurre le riallocazioni previste durante un batch di inserimenti. Non modifica `size`, la catena attiva o la free list.
+- `FixedSList::full()` e `try_push_front(...)`: rendono osservabile e gestibile senza eccezioni l'esaurimento della capacità fissa, utile quando la capacità è un evento previsto dal chiamante.
+- `BenchmarkList(...)`: helper template che misura popolamento, traversal e rimozione tramite ripetute `pop_front`. Il checksum rende osservabile il traversal. I risultati vanno raccolti con ottimizzazioni abilitate e interpretati nel contesto di workload, compilatore, hardware e tipo `T`.
