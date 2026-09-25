@@ -45,6 +45,9 @@ public:
     SListArray &operator=(const SListArray &other) = default;
     SListArray &operator=(SListArray &&other);
 
+    bool Validate() const;
+    void reserve(std::size_t slotCount);
+
     class Iterator
     {
     private:
@@ -205,8 +208,10 @@ template <typename T>
 SListArray<T>::Iterator::Iterator(SListArray *list, std::size_t index) : owner(list), current(index) {}
 
 template <typename T>
-T &SListArray<T>::Iterator::operator*() const {
-    if (current==npos){
+T &SListArray<T>::Iterator::operator*() const
+{
+    if (current == npos)
+    {
         throw std::out_of_range("SListArray: cannot dereference end iterator");
     }
     return this->owner->m_data.at(current).value;
@@ -249,11 +254,13 @@ typename SListArray<T>::Iterator SListArray<T>::end()
 // ConstIterator
 
 template <typename T>
-SListArray<T>::ConstIterator::ConstIterator( const SListArray *list, std::size_t index) : owner(list), current(index) {}
+SListArray<T>::ConstIterator::ConstIterator(const SListArray *list, std::size_t index) : owner(list), current(index) {}
 
 template <typename T>
-const T &SListArray<T>::ConstIterator::operator*() const {
-    if (current==npos){
+const T &SListArray<T>::ConstIterator::operator*() const
+{
+    if (current == npos)
+    {
         throw std::out_of_range("SListArray: cannot dereference end iterator");
     }
     return this->owner->m_data.at(current).value;
@@ -291,4 +298,56 @@ template <typename T>
 typename SListArray<T>::ConstIterator SListArray<T>::end() const
 {
     return ConstIterator{this, npos};
+}
+
+// Extra
+
+template <typename T>
+bool SListArray<T>::Validate() const
+{
+    if ((head == npos) != (m_size == 0) || m_size > m_data.size())
+    {
+        return false;
+    }
+
+    std::vector<bool> seen(m_data.size(), false);
+
+    std::size_t activeCount = 0;
+    for (std::size_t current = head; current != npos;)
+    {
+        if (current >= m_data.size() || seen[current])
+        {
+            return false;
+        }
+
+        seen[current] = true;
+        ++activeCount;
+        current = m_data[current].next;
+    }
+
+    if (activeCount != m_size)
+    {
+        return false;
+    }
+
+    std::size_t freeCount = 0;
+    for (std::size_t current = freeHead; current != npos;)
+    {
+        if (current >= m_data.size() || seen[current])
+        {
+            return false;
+        }
+
+        seen[current] = true;
+        ++freeCount;
+        current = m_data[current].next;
+    }
+
+    return activeCount + freeCount == m_data.size();
+}
+
+template <typename T>
+void SListArray<T>::reserve(std::size_t slotCount)
+{
+    m_data.reserve(slotCount);
 }

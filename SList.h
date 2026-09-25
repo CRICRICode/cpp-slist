@@ -40,6 +40,8 @@ public:
     SList &operator=(const SList &other);
     SList &operator=(SList &&other);
 
+    bool Validate() const;
+
     class Iterator
     {
     private:
@@ -321,4 +323,31 @@ template <typename T>
 bool SList<T>::ConstIterator::operator==(const ConstIterator &other) const
 {
     return !(this->current != other.current);
+}
+
+//Extra
+
+template <typename T>
+bool SList<T>::Validate() const
+{
+    if ((head == nullptr) != (m_size == 0))
+    {
+        return false;
+    }
+
+    const Node *current = head;
+    std::size_t count = 0;
+
+    while (current != nullptr)
+    {
+        if (count == m_size)
+        {
+            return false;
+        }
+
+        ++count;
+        current = current->next;
+    }
+
+    return count == m_size;
 }

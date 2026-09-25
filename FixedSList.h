@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdexcept>
 #include <array>
 #include <cstddef>
@@ -45,6 +47,11 @@ public:
     void clear();
     const T &front() const;
     T &front();
+
+    bool Validate() const;
+    bool full() const;
+    bool try_push_front(const T &value);
+    bool try_push_front(T &&value);
 
     class Iterator
     {
@@ -218,8 +225,10 @@ template <typename T, std::size_t N>
 FixedSList<T, N>::Iterator::Iterator(FixedSList *list, std::size_t index) : owner(list), current(index) {}
 
 template <typename T, std::size_t N>
-T &FixedSList<T, N>::Iterator::operator*() const {
-    if (current==npos){
+T &FixedSList<T, N>::Iterator::operator*() const
+{
+    if (current == npos)
+    {
         throw std::out_of_range("FixedSList : cannot dereference end iterator");
     }
     return this->owner->m_data.at(current).value;
@@ -262,11 +271,13 @@ typename FixedSList<T, N>::Iterator FixedSList<T, N>::end()
 // Iterator Const
 
 template <typename T, std::size_t N>
-FixedSList<T, N>::ConstIterator::ConstIterator( const FixedSList *list, std::size_t index) : owner(list), current(index) {}
+FixedSList<T, N>::ConstIterator::ConstIterator(const FixedSList *list, std::size_t index) : owner(list), current(index) {}
 
 template <typename T, std::size_t N>
-const T &FixedSList<T, N>::ConstIterator::operator*() const {
-    if (current==npos){
+const T &FixedSList<T, N>::ConstIterator::operator*() const
+{
+    if (current == npos)
+    {
         throw std::out_of_range("FixedSList : cannot dereference end iterator");
     }
     return this->owner->m_data.at(current).value;
@@ -304,4 +315,80 @@ template <typename T, std::size_t N>
 typename FixedSList<T, N>::ConstIterator FixedSList<T, N>::end() const
 {
     return ConstIterator{this, npos};
+}
+
+// Extra
+
+template <typename T, std::size_t N>
+bool FixedSList<T, N>::Validate() const
+{
+    if ((head == npos) != (m_size == 0) || m_size > N)
+    {
+        return false;
+    }
+
+    std::array<bool, N> seen{};
+
+    std::size_t activeCount = 0;
+    for (std::size_t current = head; current != npos;)
+    {
+        if (current >= N || seen[current])
+        {
+            return false;
+        }
+
+        seen[current] = true;
+        ++activeCount;
+        current = m_data[current].next;
+    }
+
+    if (activeCount != m_size)
+    {
+        return false;
+    }
+
+    std::size_t freeCount = 0;
+    for (std::size_t current = freeHead; current != npos;)
+    {
+        if (current >= N || seen[current])
+        {
+            return false;
+        }
+
+        seen[current] = true;
+        ++freeCount;
+        current = m_data[current].next;
+    }
+
+    return activeCount + freeCount == N;
+}
+
+template <typename T, std::size_t N>
+bool FixedSList<T, N>::full() const
+{
+    return m_size == N;
+}
+
+template <typename T, std::size_t N>
+bool FixedSList<T, N>::try_push_front(const T &value)
+{
+    if (full())
+    {
+        return false;
+    }
+
+    push_front(value);
+    return true;
+}
+
+template <typename T, std::size_t N>
+bool FixedSList<T, N>::try_push_front(T &&value)
+{
+    if (full())
+    {
+        return false;
+    }
+
+    push_front(std::move(value));
+    return true;
 }
