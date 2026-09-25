@@ -82,10 +82,11 @@ public:
 };
 
 template <typename T>
-SListArray<T>::SListArray(SListArray &&other) : m_data(std::move(other.m_data)),
-                                                freeHead(other.freeHead),
+SListArray<T>::SListArray(SListArray &&other) : freeHead(other.freeHead),
                                                 head(other.head),
-                                                m_size(other.m_size)
+                                                m_size(other.m_size),
+                                                m_data(std::move(other.m_data))
+
 {
     other.freeHead = npos;
     other.head = npos;
